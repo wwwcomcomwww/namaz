@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Намаз Монтобан">
+<meta name="theme-color" content="#0f5132">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Время намаза — Монтобан</title>
+<style>
+  :root {
+    --bg: #0b1f16;
+    --bg2: #0f2a1c;
+    --card: #143a26;
+    --accent: #2fbf71;
+    --accent2: #7fe0a8;
+    --text: #eafff1;
+    --muted: #8fb8a0;
+    --active: #1d5a37;
+    --gold: #d4af37;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(circle at 50% 0%, var(--bg2), var(--bg) 70%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px 16px 40px;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 18px; }
+  header h1 { font-size: 20px; margin: 0 0 4px; font-weight: 700; letter-spacing: .3px; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .datebar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;
+    border: 1px solid rgba(127,224,168,0.15);
+  }
+  .datebar button {
+    background: var(--active); color: var(--text); border: none; border-radius: 10px;
+    width: 36px; height: 36px; font-size: 18px; cursor: pointer;
+  }
+  .datebar .date-label { font-size: 14px; font-weight: 600; text-align: center; flex: 1; }
+  .datebar .date-label .greg { display: block; }
+  .datebar .date-label .hij { display: block; color: var(--gold); font-size: 12px; margin-top: 2px; }
+  .countdown {
+    text-align: center; background: linear-gradient(135deg, var(--active), var(--card));
+    border-radius: 16px; padding: 16px; margin-bottom: 16px;
+    border: 1px solid rgba(127,224,168,0.2);
+  }
+  .countdown .label { color: var(--accent2); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+  .countdown .name { font-size: 24px; font-weight: 800; margin: 4px 0; }
+  .countdown .time { font-size: 15px; color: var(--muted); }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card); border-radius: 14px; padding: 14px 16px;
+    border: 1px solid rgba(127,224,168,0.1);
+    transition: background .2s;
+  }
+  .row.now { background: var(--active); border-color: var(--accent); }
+  .row .left { display: flex; align-items: center; gap: 12px; }
+  .row .icon { font-size: 20px; width: 26px; text-align: center; }
+  .row .name { font-size: 16px; font-weight: 600; }
+  .row .name small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; }
+  .row .time { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .settings {
+    margin-top: 18px; background: var(--card); border-radius: 14px; padding: 14px 16px;
+    border: 1px solid rgba(127,224,168,0.1); font-size: 13px; color: var(--muted);
+  }
+  .settings .srow { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+  select {
+    background: var(--active); color: var(--text); border: 1px solid rgba(127,224,168,0.3);
+    border-radius: 8px; padding: 6px 10px; font-size: 13px;
+  }
+  .footer { text-align: center; margin-top: 20px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+  .install-hint {
+    margin-top: 14px; background: rgba(212,175,55,0.1); border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px; padding: 10px 14px; font-size: 12px; color: var(--gold); text-align: center;
+    display: none;
+  }
+  .install-hint.show { display: block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🕌 Время намаза</h1>
+    <div class="sub">Montauban, France · метод: 12° (Фаджр/Иша)</div>
+  </header>
+
+  <div class="datebar">
+    <button id="prevDay">‹</button>
+    <div class="date-label">
+      <span class="greg" id="gregDate">—</span>
+      <span class="hij" id="hijDate"></span>
+    </div>
+    <button id="nextDay">›</button>
+  </div>
+
+  <div class="countdown">
+    <div class="label">До намаза</div>
+    <div class="name" id="nextName">—</div>
+    <div class="time" id="nextIn">—</div>
+  </div>
+
+  <div class="list" id="list"></div>
+
+  <div class="settings">
+    <div class="srow">
+      <span>Метод Асра</span>
+      <select id="asrMethod">
+        <option value="1">Стандарт (Шафии/Малики/Ханбали)</option>
+        <option value="2">Ханафи</option>
+      </select>
+    </div>
+    <div class="srow">
+      <span>Угол Фаджр / Иша</span>
+      <span>12° / 12°</span>
+    </div>
+  </div>
+
+  <div class="install-hint" id="installHint">
+    📲 Нажмите «Поделиться» → «На экран «Домой»», чтобы установить как приложение
+  </div>
+
+  <div class="footer">
+    Расчёт на основе астрономического положения солнца.<br>
+    Координаты: 44.0181° N, 1.3528° E · часовой пояс Europe/Paris (авто DST)
+  </div>
+</div>
+
+<script>
+// ===== Астрономические вспомогательные функции =====
+const DEG = Math.PI / 180, RAD = 180 / Math.PI;
+const dsin = d => Math.sin(d * DEG);
+const dcos = d => Math.cos(d * DEG);
+const dtan = d => Math.tan(d * DEG);
+const darcsin = x => Math.asin(x) * RAD;
+const darccos = x => Math.acos(x) * RAD;
+const darctan2 = (y, x) => Math.atan2(y, x) * RAD;
+const darccot = x => Math.atan2(1, x) * RAD;
+const fixAngle = a => { a = a % 360; return a < 0 ? a + 360 : a; };
+const fixHour = h => { h = h % 24; return h < 0 ? h + 24 : h; };
+
+function julianDay(year, month, day) {
+  if (month <= 2) { year -= 1; month += 12; }
+  const A = Math.floor(year / 100);
+  const B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + B - 1524.5;
+}
+
+function sunPosition(jd) {
+  const D = jd - 2451545.0;
+  const g = fixAngle(357.529 + 0.98560028 * D);
+  const q = fixAngle(280.459 + 0.98564736 * D);
+  const L = fixAngle(q + 1.915 * dsin(g) + 0.020 * dsin(2 * g));
+  const e = 23.439 - 0.00000036 * D;
+  const RA = fixHour(darctan2(dcos(e) * dsin(L), dcos(L)) / 15);
+  const eqt = q / 15 - RA;
+  const decl = darcsin(dsin(e) * dsin(L));
+  return { declination: decl, equation: eqt };
+}
+
+function timeDiff(lat, decl, angle) {
+  const val = (-dsin(angle) - dsin(lat) * dsin(decl)) / (dcos(lat) * dcos(decl));
+  if (val > 1 || val < -1) return null;
+  return darccos(val) / 15;
+}
+
+function asrTimeDiff(lat, decl, factor) {
+  const angle = -darccot(factor + dtan(Math.abs(lat - decl)));
+  return timeDiff(lat, decl, angle);
+}
+
+function getTZOffsetMinutes(date, timeZone) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone, hour12: false, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  const parts = dtf.formatToParts(date).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  let hour = parseInt(parts.hour, 10);
+  if (hour === 24) hour = 0;
+  const asUTC = Date.UTC(parts.year, parts.month - 1, parts.day, hour, parts.minute, parts.second);
+  return (asUTC - date.getTime()) / 60000;
+}
+
+const LAT = 44.0181, LON = 1.3528, TZ_NAME = 'Europe/Paris', FAJR_ANGLE = 12, ISHA_ANGLE = 12;
+
+function computePrayerTimes(dateObj, asrFactor) {
+  const y = dateObj.getFullYear(), m = dateObj.getMonth() + 1, d = dateObj.getDate();
+  const tzOffsetH = getTZOffsetMinutes(new Date(Date.UTC(y, m - 1, d, 10)), TZ_NAME) / 60;
+
+  let jd = julianDay(y, m, d) - LON / (15 * 24);
+  let times = { fajr: 5, sunrise: 6, dhuhr: 12, asr: 15, sunset: 18, maghrib: 18.05, isha: 19 };
+
+  for (let iter = 0; iter < 2; iter++) {
+    const t = {};
+    for (const key in times) {
+      const { declination: decl, equation: eqt } = sunPosition(jd + times[key] / 24);
+      const noon = fixHour(12 - eqt);
+      let time;
+      if (key === 'dhuhr') {
+        time = noon;
+      } else if (key === 'sunrise') {
+        const dt = timeDiff(LAT, decl, 0.833);
+        time = dt === null ? noon : noon - dt;
+      } else if (key === 'sunset') {
+        const dt = timeDiff(LAT, decl, 0.833);
+        time = dt === null ? noon : noon + dt;
+      } else if (key === 'maghrib') {
+        const dt = timeDiff(LAT, decl, 0.833);
+        time = dt === null ? noon : noon + dt;
+      } else if (key === 'fajr') {
+        const dt = timeDiff(LAT, decl, FAJR_ANGLE);
+        time = dt === null ? noon - 6 : noon - dt;
+      } else if (key === 'isha') {
+        const dt = timeDiff(LAT, decl, ISHA_ANGLE);
+        time = dt === null ? noon + 6 : noon + dt;
+      } else if (key === 'asr') {
+        const dt = asrTimeDiff(LAT, decl, asrFactor);
+        time = dt === null ? noon + 3 : noon + dt;
+      }
+      t[key] = time;
+    }
+    times = t;
+  }
+
+  const result = {};
+  for (const key in times) {
+    let localTime = fixHour(times[key] + tzOffsetH - LON / 15);
+    const hh = Math.floor(localTime);
+    const mm = Math.round((localTime - hh) * 60);
+    let finalH = hh, finalM = mm;
+    if (finalM === 60) { finalM = 0; finalH = (finalH + 1) % 24; }
+    result[key] = { h: finalH, m: finalM, decimal: finalH + finalM / 60 };
+  }
+  return result;
+}
+
+// ===== UI =====
+const PRAYERS = [
+  { key: 'fajr', name: 'Фаджр', icon: '🌌', sub: '12° ниже горизонта' },
+  { key: 'sunrise', name: 'Восход', icon: '🌅', sub: 'Шурук' },
+  { key: 'dhuhr', name: 'Зухр', icon: '☀️', sub: 'Полдень' },
+  { key: 'asr', name: 'Аср', icon: '🌤️', sub: '' },
+  { key: 'maghrib', name: 'Магриб', icon: '🌇', sub: 'Закат' },
+  { key: 'isha', name: 'Иша', icon: '🌙', sub: '12° ниже горизонта' },
+];
+
+let currentDate = new Date();
+let asrFactor = 1;
+
+function fmt(t) {
+  return String(t.h).padStart(2, '0') + ':' + String(t.m).padStart(2, '0');
+}
+
+function render() {
+  const times = computePrayerTimes(currentDate, asrFactor);
+  document.getElementById('gregDate').textContent = currentDate.toLocaleDateString('ru-RU', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const isToday = currentDate.toDateString() === new Date().toDateString();
+
+  const order = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+  let nextPrayer = null;
+
+  order.forEach((key, idx) => {
+    const p = PRAYERS.find(x => x.key === key);
+    const t = times[key];
+    const timeMin = t.h * 60 + t.m;
+    const row = document.createElement('div');
+    row.className = 'row';
+    const isActive = isToday && nowMin < timeMin && !nextPrayer;
+    if (isToday && nowMin < timeMin && !nextPrayer) {
+      nextPrayer = { name: p.name, time: t, timeMin };
+      row.classList.add('now');
+    }
+    row.innerHTML = `
+      <div class="left">
+        <div class="icon">${p.icon}</div>
+        <div class="name">${p.name}${p.sub ? `<small>${p.sub}</small>` : ''}</div>
+      </div>
+      <div class="time">${fmt(t)}</div>
+    `;
+    list.appendChild(row);
+  });
+
+  if (!nextPrayer && isToday) {
+    // после Иша — следующий Фаджр завтра
+    const tomorrow = new Date(currentDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tTimes = computePrayerTimes(tomorrow, asrFactor);
+    nextPrayer = { name: 'Фаджр (завтра)', time: tTimes.fajr, timeMin: null, tomorrow: true, tomorrowDate: tomorrow };
+  }
+
+  if (isToday && nextPrayer) {
+    document.getElementById('nextName').textContent = nextPrayer.name;
+    updateCountdown(nextPrayer);
+  } else {
+    document.getElementById('nextName').textContent = '—';
+    document.getElementById('nextIn').textContent = 'Выбрана другая дата';
+  }
+}
+
+let countdownTimer = null;
+function updateCountdown(nextPrayer) {
+  clearInterval(countdownTimer);
+  function tick() {
+    const now = new Date();
+    let target;
+    if (nextPrayer.tomorrow) {
+      target = new Date(nextPrayer.tomorrowDate);
+      target.setHours(nextPrayer.time.h, nextPrayer.time.m, 0, 0);
+    } else {
+      target = new Date();
+      target.setHours(nextPrayer.time.h, nextPrayer.time.m, 0, 0);
+    }
+    let diff = Math.max(0, target - now);
+    const hh = Math.floor(diff / 3600000);
+    const mm = Math.floor((diff % 3600000) / 60000);
+    const ss = Math.floor((diff % 60000) / 1000);
+    document.getElementById('nextIn').textContent =
+      `через ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')} · в ${fmt(nextPrayer.time)}`;
+  }
+  tick();
+  countdownTimer = setInterval(tick, 1000);
+}
+
+document.getElementById('prevDay').addEventListener('click', () => {
+  currentDate.setDate(currentDate.getDate() - 1);
+  render();
+});
+document.getElementById('nextDay').addEventListener('click', () => {
+  currentDate.setDate(currentDate.getDate() + 1);
+  render();
+});
+document.getElementById('asrMethod').addEventListener('change', e => {
+  asrFactor = parseInt(e.target.value, 10);
+  render();
+});
+
+render();
+setInterval(() => { if (currentDate.toDateString() === new Date().toDateString()) render(); }, 60000);
+
+// Подсказка по установке для iOS Safari (нет автоматического баннера установки)
+if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.navigator.standalone) {
+  document.getElementById('installHint').classList.add('show');
+}
+
+// Регистрация "виртуального" manifest для установки как PWA (работает при хостинге по https)
+try {
+  const manifest = {
+    name: "Время намаза — Монтобан",
+    short_name: "Намаз",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#0b1f16",
+    theme_color: "#0f5132",
+    icons: [{
+      src: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230f5132"/><text x="50" y="65" font-size="55" text-anchor="middle">🕌</text></svg>'),
+      sizes: "192x192",
+      type: "image/svg+xml"
+    }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('link');
+  link.rel = 'manifest';
+  link.href = url;
+  document.head.appendChild(link);
+} catch (e) {}
+</script>
+</body>
+</html>
